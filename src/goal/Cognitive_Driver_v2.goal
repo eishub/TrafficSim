@@ -1,0 +1,152 @@
+init module {
+	knowledge {
+		% Calculates the displacement of an object given its acceleration, speed and initial position using Newtonian equation of motion.
+		% NOTE: Take care the that sign of the acceleration is correct for deceleration.
+		displacement(T, A, V, X0, DeltaX) :- DeltaX is 0.5 * A * T * T + V * T + X0. 
+		
+		%Determines the safe gap.
+		safe_distance(X) :- max_deceleration(MD), speed(S), sim_time_step(T), gap(G), displacement(T, MD, S, 0, DX), X is DX + 1.
+		
+		% Determines if the agent is able to stop before hitting the object in front.
+		safe(me) :- max_deceleration(MD), speed(S), sim_time_step(T), gap(G), displacement(T, MD, S, 0, DX), G > DX.
+		
+		% Determines if the agent is speeding.
+		speeding(me) :- speed(S), lane_speed_limit(SL), S > SL.
+		
+		%make this random? GOAL and SWI prolog seem to have a problem here for example goal does not seem to liek this: X is random(10), min_timegap(1.0 + X/10).
+		min_timegap(2.0).
+		blocked(me) :- block(1).
+
+	}
+	actionspec{
+		accelerate(X) {
+			pre  { number(X) }
+			post { true }
+		}
+		decelerate(X) {
+			pre  { number(X) }
+			post { true }
+		}
+		skip {
+			pre  { true }
+			post { true }
+		}
+	}
+}
+
+main module{
+	program [order=linear] {
+		
+		%todo: make sure that X and Y are not zero otherwise we get division by zero problems.
+		%if a-goal(speed(GS)), bel(speed(CS), GS > CS, speed_delta(DS), DS =\= 0, max_acceleration(MA),  A is MA * (1 -  (CS/GS)**5) -DS/(GS-CS)) then accelerate(A).
+		%if a-goal(speed(GS)), a-goal(synchronize),  bel(speed(CS), GS > CS, max_acceleration(MA),  A is MA * (0.5 -  (CS/GS)**5)) then accelerate(A). 
+		if a-goal(speed(GS)), bel(speed(CS), GS > CS, max_acceleration(MA),  A is MA * (1 -  (CS/GS)**5)) then accelerate(A).
+		%if a-goal(speed(GS)), bel(speed(CS), GS < CS, speed_delta(DS), DS =\= 0, max_deceleration(MD),  D is MD * (1 - (CS/GS)**5) +DS/(GS-CS)) then decelerate(D).
+		%if a-goal(speed(GS)), a-goal(synchronize), bel(speed(CS), GS < CS, max_deceleration(MD),  D is (MD * 1 - (GS/CS)**5)) then decelerate(D).
+		if a-goal(speed(GS)), bel(speed(CS), GS < CS, max_deceleration(MD),  D is MD * (1 - (CS/GS)**5)) then decelerate(D).
+		if bel(true) then skip.
+	}
+}
+
+event module{
+	program{
+		%---------------------------------------
+		% Sensing cycle: Update all sensory data
+		%---------------------------------------
+		%update simulation time
+		forall bel( sim_time(X), percept( sim_time(Y) ), not (X = Y) ) do delete( sim_time(X) ).
+		forall bel( percept( sim_time(X) ), not( sim_time(X) ) ) do insert( sim_time(X) ).
+
+		%update simulation step size
+		forall bel( sim_time_step(X), percept( sim_time_step(Y) ), not (X = Y) ) do delete( sim_time_step(X) ).
+		forall bel( percept( sim_time_step(X) ), not( sim_time_step(X) ) ) do insert( sim_time_step(X) ).
+
+		% update speed information.
+		forall bel( speed(X), percept( speed(Y) ), not (X = Y) ) do delete( speed(X) ).
+		forall bel( percept( speed(X) ), not( speed(X) ) ) do insert( speed(X) ).
+
+		% update space gap information.
+		forall bel( gap(X), percept( gap(Y) ), not (X = Y) ) do delete( gap(X) ).
+		forall bel( percept( gap(X) ), not( gap(X) ) ) do insert( gap(X) ).
+
+		% update time gap information.
+		forall bel( time_gap(X), percept( time_gap(Y) ), not (X = Y) ) do delete( time_gap(X) ).
+		forall bel( percept( time_gap(X) ), not( time_gap(X) ) ) do insert( time_gap(X) ).
+
+		% update acceleration information.
+		forall bel( acceleration(X), percept( acceleration(Y) ), not (X = Y) ) do delete( acceleration(X) ).
+		forall bel( percept( acceleration(X) ), not( acceleration(X) ) ) do insert( acceleration(X) ).
+
+		% update max acceleration information.
+		% NOTE: This should not be a belief but knowledge. Since I cannot insert this into the knowledge base this is good enough for now.
+		forall bel( max_acceleration(X), percept( max_acceleration(Y) ), not (X = Y) ) do delete( max_acceleration(X) ).
+		forall bel( percept( max_acceleration(X) ), not( max_acceleration(X) ) ) do insert( max_acceleration(X) ).
+
+		% update max deceleration information.
+		% NOTE: This should not be a belief but knowledge. Since I cannot insert this into the knowledge base this is good enough for now.
+		forall bel( max_deceleration(X), percept( max_deceleration(Y) ), not (X = Y) ) do delete( max_deceleration(X) ).
+		forall bel( percept( max_deceleration(X) ), not( max_deceleration(X) ) ) do insert( max_deceleration(X) ).
+
+		% update speed information.
+		forall bel( speed_delta(X), percept( speed_delta(Y) ), not (X = Y) ) do delete( speed_delta(X) ).
+		forall bel( percept( speed_delta(X) ), not( speed_delta(X) ) ) do insert( speed_delta(X) ).
+
+		% update lane information.
+		forall bel( lane(X), percept( lane(Y) ), not (X = Y) ) do delete( lane(X) ).
+		forall bel( percept( lane(X) ), not( lane(X) ) ) do insert( lane(X) ).
+		
+		% update speed limit information.
+		forall bel( lane_speed_limit(X), percept( lane_speed_limit(Y) ), not (X = Y) ) do delete( lane_speed_limit(X) ).
+		forall bel( percept( lane_speed_limit(X) ), not( lane_speed_limit(X) ) ) do insert( lane_speed_limit(X) ).
+		
+		% update left lane change information.
+		forall bel( left_lane_change_allowed(X), percept( left_lane_change_allowed(Y) ), not (X = Y) ) do delete( left_lane_change_allowed(X) ).
+		forall bel( percept( left_lane_change_allowed(X) ), not( left_lane_change_allowed(X) ) ) do insert( left_lane_change_allowed(X) ).
+		
+		% update right lane change information.
+		forall bel( right_lane_change_allowed(X), percept( right_lane_change_allowed(Y) ), not (X = Y) ) do delete( right_lane_change_allowed(X) ).
+		forall bel( percept( right_lane_change_allowed(X) ), not( right_lane_change_allowed(X) ) ) do insert( right_lane_change_allowed(X) ).
+
+		% update left lane information.
+		forall bel( left_lane(X), percept( left_lane(Y) ), not (X = Y) ) do delete( left_lane(X) ).
+		forall bel( percept( left_lane(X) ), not( left_lane(X) ) ) do insert( left_lane(X) ).
+
+		% update right lane information.
+		forall bel( right_lane(X), percept( right_lane(Y) ), not (X = Y) ) do delete( right_lane(X) ).
+		forall bel( percept( right_lane(X) ), not( right_lane(X) ) ) do insert( right_lane(X) ).
+
+		% update downstream lane information.
+		forall bel( downstream_lane(X), percept( downstream_lane(Y) ), not (X = Y) ) do delete( downstream_lane(X) ).
+		forall bel( percept( downstream_lane(X) ), not( downstream_lane(X) ) ) do insert( downstream_lane(X) ).
+		
+		% update blocking vehicle information.
+		forall bel( block(X), percept( block(Z) ), not (X = Z) ) do delete( block(X) ).
+		forall bel( percept( block(X) ), not( block(X) ) ) do insert( block(X) ).
+		
+		%--------------------------------------
+		% Update Goals based on new sensory data
+		%--------------------------------------
+
+		if bel(blocked(me)) then {
+			% fill gap
+			if not(a-goal(synchronize)), bel(time_gap(TG), min_timegap(MTG), TG > MTG, speed(S), lane_speed_limit(SL)) then {
+				forall goal(speed(Y)) do drop(speed(Y)).
+				if not(a-goal(speed(SL))) then adopt(speed(SL)).
+			}
+			% synchronize
+			if bel(time_gap(TG), min_timegap(MTG), TG =< MTG, speed(S), speed_delta(DS), X is S - DS) then  {
+				if not(a-goal(synchronize)) then adopt(synchronize).
+				forall goal(speed(Y)) do drop(speed(Y)).
+				if not(a-goal(speed(X))) then adopt(speed(X)).
+			}
+			if a-goal(synchronize), bel(time_gap(TG), min_timegap(MTG), TG >= 2 * MTG) then drop(synchronize).
+			
+		}
+		if bel(not(blocked(me))), bel(lane_speed_limit(SL)) then {
+			forall goal(speed(Y)) do drop(speed(Y)).
+			if a-goal(synchronize) then drop(synchronize).
+			if not(a-goal(speed(SL))) then adopt(speed(SL)).
+		}
+		
+	}
+}

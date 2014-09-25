@@ -1,0 +1,155 @@
+init module {
+	knowledge {
+		%make this random? GOAL and SWI prolog seem to have a problem here for example goal does not seem to liek this: X is random(10), min_timegap(1.0 + X/10).
+		min_gap(3.0).
+		blocked(me) :- block(1).
+	}
+
+	actionspec{
+		accelerate(X) {
+			pre  { number(X) }
+			post { true }
+		}
+		decelerate(X) {
+			pre  { number(X) }
+			post { true }
+		}
+		change_lane(X) {
+			pre  { true }
+			post { true }
+		}
+		skip {
+			pre  { true }
+			post { true }
+		}
+	}
+}
+main module{
+	knowledge {
+		blocked(X) :- block(X,1).
+	}
+	program [order=linear] {
+
+		
+		if bel(not(changing_lane),
+			   require_lane_change(X), X > 0,
+			   left_lc_beneficial(B), B = true,
+			   left_lane_change_allowed(Y), Y = true) then change_lane(left) + insert(changing_lane). 
+
+	   if bel(blocked(me), 
+			   max_acceleration(A),
+			   max_deceleration(B),
+			   speed(V),
+			   desired_speed(DesiredV),
+			   gap(G),
+			   speed_delta(DeltaV),
+			   min_gap(MinG),
+			   Delta is 5,
+			   T is 2,
+			   SStar is MinG + max(0, V*T + V*DeltaV/sqrt(A*B)/2),
+			   Z is A * (1 - (V/DesiredV)**Delta - (SStar/G)**2))
+		then
+		accelerate(Z).
+		
+		if bel(not (blocked(me)),
+			   max_acceleration(A),
+			   speed(V),
+			   desired_speed(DesiredV),
+			   Delta is 5,
+			   Z is A * (1 - (V/DesiredV)**Delta)
+		)
+		then 
+		accelerate(Z).
+	}
+}
+
+event module{
+	program{
+		%---------------------------------------
+		% Sensing cycle: Update all sensory data
+		%---------------------------------------
+		% update speed information.
+		forall bel( speed(X), percept( speed(Y) ), not (X = Y) ) do delete( speed(X) ).
+		forall bel( percept( speed(X) ), not( speed(X) ) ) do insert( speed(X) ).
+
+		% update space gap information.
+		forall bel( gap(X), percept( gap(Y) ), not (X = Y) ) do delete( gap(X) ).
+		forall bel( percept( gap(X) ), not( gap(X) ) ) do insert( gap(X) ).
+
+		% update time gap information.
+		forall bel( time_gap(X), percept( time_gap(Y) ), not (X = Y) ) do delete( time_gap(X) ).
+		forall bel( percept( time_gap(X) ), not( time_gap(X) ) ) do insert( time_gap(X) ).
+
+		% update mininum gap keeping information. 
+		% NOTE: This should not be a belief but knowledge. Since I cannot insert this into the knowledge base this is good enough for now.
+		forall bel( min_gap(X), percept( min_gap(Y) ), not (X = Y) ) do delete( min_gap(X) ).
+		forall bel( percept( min_gap(X) ), not( min_gap(X) ) ) do insert( min_gap(X) ).
+
+		% update acceleration information.
+		forall bel( acceleration(X), percept( acceleration(Y) ), not (X = Y) ) do delete( acceleration(X) ).
+		forall bel( percept( acceleration(X) ), not( acceleration(X) ) ) do insert( acceleration(X) ).
+
+		% update max acceleration information.
+		% NOTE: This should not be a belief but knowledge. Since I cannot insert this into the knowledge base this is good enough for now.
+		forall bel( max_acceleration(X), percept( max_acceleration(Y) ), not (X = Y) ) do delete( max_acceleration(X) ).
+		forall bel( percept( max_acceleration(X) ), not( max_acceleration(X) ) ) do insert( max_acceleration(X) ).
+
+		% update max deceleration information.
+		% NOTE: This should not be a belief but knowledge. Since I cannot insert this into the knowledge base this is good enough for now.
+		forall bel( max_deceleration(X), percept( max_deceleration(Y) ), not (X = Y) ) do delete( max_deceleration(X) ).
+		forall bel( percept( max_deceleration(X) ), not( max_deceleration(X) ) ) do insert( max_deceleration(X) ).
+
+		% update speed information.
+		forall bel( speed_delta(X), percept( speed_delta(Y) ), not (X = Y) ) do delete( speed_delta(X) ).
+		forall bel( percept( speed_delta(X) ), not( speed_delta(X) ) ) do insert( speed_delta(X) ).
+
+		% update lane information.
+		forall bel( lane(X), percept( lane(Y) ), not (X = Y) ) do delete( lane(X) ).
+		forall bel( percept( lane(X) ), not( lane(X) ) ) do insert( lane(X) ).
+		
+		% update speed limit information.
+		forall bel( lane_speed_limit(X), percept( lane_speed_limit(Y) ), not (X = Y) ) do delete( lane_speed_limit(X) ).
+		forall bel( percept( lane_speed_limit(X) ), not( lane_speed_limit(X) ) ) do insert( lane_speed_limit(X) ).
+		
+		% update desired speed information.
+		forall bel( desired_speed(X)) do delete(desired_speed(X)) .
+		forall bel( lane_speed_limit(LSL)) do insert( desired_speed(LSL)).
+
+		% update left lane change information.
+		forall bel( left_lane_change_allowed(X), percept( left_lane_change_allowed(Y) ), not (X = Y) ) do delete( left_lane_change_allowed(X) ).
+		forall bel( percept( left_lane_change_allowed(X) ), not( left_lane_change_allowed(X) ) ) do insert( left_lane_change_allowed(X) ).
+		
+		% update right lane change information.
+		forall bel( right_lane_change_allowed(X), percept( right_lane_change_allowed(Y) ), not (X = Y) ) do delete( right_lane_change_allowed(X) ).
+		forall bel( percept( right_lane_change_allowed(X) ), not( right_lane_change_allowed(X) ) ) do insert( right_lane_change_allowed(X) ).
+
+		% update left lane information.
+		forall bel( left_lane(X), percept( left_lane(Y) ), not (X = Y) ) do delete( left_lane(X) ).
+		forall bel( percept( left_lane(X) ), not( left_lane(X) ) ) do insert( left_lane(X) ).
+
+		% update right lane information.
+		forall bel( right_lane(X), percept( right_lane(Y) ), not (X = Y) ) do delete( right_lane(X) ).
+		forall bel( percept( right_lane(X) ), not( right_lane(X) ) ) do insert( right_lane(X) ).
+
+		% update downstream lane information.
+		forall bel( downstream_lane(X), percept( downstream_lane(Y) ), not (X = Y) ) do delete( downstream_lane(X) ).
+		forall bel( percept( downstream_lane(X) ), not( downstream_lane(X) ) ) do insert( downstream_lane(X) ).
+		
+		% update blocking vehicle information.
+		forall bel( block(X, Y), percept( block(Z) ), not (Y = Z) ) do delete( block(X,Y) ).
+		forall bel( percept( block(X) ), not( block(me, X) ) ) do insert( block(me, X) ).
+		
+		% update lane change information.
+		forall bel( require_lane_change(X), percept( require_lane_change(Z) ), not (X = Z) ) do delete( require_lane_change(X) ).
+		forall bel( percept( require_lane_change(X) ), not( require_lane_change(X) ) ) do insert( require_lane_change(X) ).
+		
+		% update imposed acceleration if lane changing to left
+		forall bel( left_lc_imposed_acc(X), percept( left_lc_imposed_acc(Z) ), not (X = Z) ) do delete( left_lc_imposed_acc(X) ).
+		forall bel( percept( left_lc_imposed_acc(X) ), not( left_lc_imposed_acc(X) ) ) do insert( left_lc_imposed_acc(X) ).
+
+		% update lane change incentive
+		forall bel( left_lc_beneficial(X), percept( left_lc_beneficial(Z) ), not (X = Z) ) do delete( left_lc_beneficial(X) ).
+		forall bel( percept( left_lc_beneficial(X) ), not( left_lc_beneficial(X) ) ) do insert( left_lc_beneficial(X) ).
+		
+	}
+}

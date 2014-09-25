@@ -1,0 +1,36 @@
+environment{
+	% insert a proper environment reference on the next line.
+	"../../target/jSim-0.1-SNAPSHOT-jar-with-dependencies.jar" .
+	%init[scenario = "ACCELERATION", duration = 29.0, stepSize= 0.05].
+	%init[scenario = "MERGING", duration = 90.0, stepSize= 0.05].
+	%init[scenario = "DENSITY_FLOW", duration = 50.0, stepSize= 0.2, detectorPeriod = 5].
+	%init[scenario = "DENSITY_FLOW_BLOCKED", duration = 50.0, stepSize= 0.2, detectorPeriod = 5].
+	%init[scenario = "MIXED_TRAFFIC", duration = 50.0, stepSize= 0.2, detectorPeriod = 5].
+	%init[scenario = "MIXED_TRAFFIC_BLOCKED", duration = 50.0, stepSize= 0.2, detectorPeriod = 5].
+	init[scenario = "A16", duration = 120.0, stepSize= 0.05].
+	%init[scenario = "SCALABILITY", duration = 210.0, stepSize= 0.2].
+}
+
+agentfiles{
+	% insert (list of) agent file references below.
+	"IDM_Driver.goal" [name = IDM_Driver_Agent] .
+	"Cognitive_Driver.goal" [name = Cognitive_Driver_Agent] .
+	"Cognitive_Driver_v1.goal" [name = Cognitive_Driver_Agent_v1] .
+	"Cognitive_Driver_v2.goal" [name = Cognitive_Driver_Agent_v2] .
+	"Cognitive_Driver_v3.goal" [name = Cognitive_Driver_Agent_v3] .
+	"Cognitive_Driver_v4.goal" [name = Cognitive_Driver_Agent_v4] .
+	"Blocking_Driver.goal" [name = Blocking_Driver] .
+}
+
+launchpolicy{
+	% insert appropriate launch rules for your environment and agents below.
+	%when [type = BLOCKING]@env do launch * : Blocking_Driver .
+	when [type = IDM]@env do launch * : IDM_Driver_Agent .
+	%when [type = IDM]@env do launch * : Cognitive_Driver_Agent_v3 .
+	when [type = goaldriver]@env do launch * : IDM_Driver_Agent .
+	%when [type = goaldriver]@env do launch * : Cognitive_Driver_Agent .
+	%when [type = goaldriver]@env do launch * : Cognitive_Driver_Agent_v2.
+	%when [type = goaldriver]@env do launch * : Cognitive_Driver_Agent_v3.
+	%when [type = goaldriver]@env do launch * : Cognitive_Driver_Agent_v4.
+}
+

@@ -1,0 +1,59 @@
+The Simone highway data is output in a format that looks like this
+10D00D010C19D0070007 6725m R- _ 1 20111219 06:00 y 21 116 1 BLK
+This line consists of 12 space-separated fields:
+
+1	Detector code (see Decode Rijkswaterstaat BPS code
+2	Distance along the road (in m)
+3	Lane type (see below)
+4	Letter of connector road or "_" for the main road
+5	Road way rank number (numbering starts at 1 for the center-most road way)
+6	Date (YYYYMMSS)
+7	Time (HH:MM)
+8	Reliability indicator (this indicator is not very reliable itself); "y": reliable, "n": not reliable
+9	Number of vehicles counted in the measurement interval
+10	Mean speed of the detected vehicles (regretfully this is not the harmonic mean speed) in km/h
+11	Lane number (lanes are counted from 1; left-most lane in the road way)
+12	State of the variable message sign (see below)
+
+=============================================================================================
+The possible values of the lane type field (with descriptions) can be obtained by filling in
+SELECT * from rws_bps_lanetypes
+in the Queriy field on the (http://www.regiolab-delft.nl/?q=node/19) query page.
+
+(result of query)
+-------------------
+TYPE	DESCRIPTION
+----    -----------
+R-	    Lane
+U-	    Exiting lane
+I-	    Entering lane
+V-	    Emergency lane
+L-	    Crawl lane
+B-	    Bus lane
+W-	    Weaving lane
+C-	    Correction lane
+S-	    Suggestion lane
+F-	    Bicycle lane
+P-	    Parking lane
+K-	    Side line
+D-	    Dividing line
+A-	    Center line
+BB	    Upper side slope
+TA	    Side slope
+OB	    Lower side slope
+WG	    Water way
+BG	    Area between water way and road way
+T-	    Pedestrian lane
+G-	    Gutter
+O-	    Side fixture/filling
+X-	    Other lane
+??	    One or more lanes
+
+
+===================================================================================================
+(This is not important for now)
+The possbile values of the variable message signs (with descriptions) can be obtained by filling in
+SELECT * from rws_vms_states
+in the Queriy field on the (http://www.regiolab-delft.nl/?q=node/19) query page.
+
+BLK means blank

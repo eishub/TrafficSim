@@ -1,0 +1,100 @@
+IMPORTANT: This package has been build and used with goal build version 5453.
+
+* ==========
+** Contents
+* ==========
+
+1. Building/Running project JAR
+2. Installing EIS on the local maven repo
+3. Project Structure and Directories
+4. OLD/Deprecated information
+
+
+
+* ====================================
+** 1. Building/Running the project JAR
+* ====================================
+Too build the JAR file of the project run the following command. Note that maven has to be installed and configured
+correctly for this to work. If the build fails this is probably due to missing dependencies. There is only one dependency
+that probably needs to be installed manually which the EIS package (See below for instructions on how to manually install
+EIS in maven). All other dependencies should be automatically downloaded from the Internet if maven is configured correctly.
+
+------------------------
+Command for building JAR
+------------------------
+
+mvn clean package assembly:single
+
+
+This will create 2 JAR files one without the dependencies and one including all the dependencies
+Goto the target build directory to find the JAR file which can be used as a stand alone GOAL environment.
+The JAR file is also executable but this will only show you the simulation environment and the cars will
+do nothing if you run the simulation.
+
+Please note that if the build command fails it is highly likely that the EIS dependency is not installed. 
+To install EIS you would have to follow the next steps.
+
+
+
+* ============================================
+** 2. Installing EIS as on the local maven repo
+* ============================================
+1. Download the EIS package from the sf.net website
+2. Extract and go into the bin directory
+3. Run the following command to install EIS into local maven repo
+
+-------
+command
+-------
+mvn install:install-file -Dfile=eis-0.3.jar -DgroupId=apleis -DartifactId=eis -Dversion=0.3 -Dpackaging=jar -Djavadoc=eis-0.3-javadoc.jar -Dsources=eis-0.3-sources.jar
+
+NOTE: If you are working with a newer version of the EIS package and you change the "0.3" version number you will also need to update
+the pom.xml file accordingly.
+
+
+* ============================================
+** 3. Project Structure and Directories
+* ============================================
+
+src
+|
+-- goal                       (Contains the goal agents that were used and the MAS configuration)
+|
+-- main
+|    |
+|    -- java
+|    |     |
+|    |     -- apl             (contains the EIS connection implementation and simulation scenarios)
+|    |     |
+|    |     -- GUI             (Contains the simulation GUI, heavily changed from the original jModel/MOTUS simulator on which jSim is based on)
+|    |     |
+|    |     -- microModel      (Contains the mico-simulation core components, data objects, logging functionality, map import functionality, etc.)
+|    |
+|    -- resources             (Contains the example map files for the A16 highway and the maps used in the scenarios)
+|
+-- matlab                     (Contains matlab script I used to plot some data)
+|
+-- test                       (Contains Test cases for only some parts of the project)
+
+
+
+NOTE: The project is a heavily modified version of the original jModel (or MOTUS) as they call it these days.
+The microModel and GUI packages contain the remnants of what used to be the jModel code. I have heavily refactored
+the code in these packages, renamed classes, added functionality to import maps which used to be matlab code in jModel.
+
+
+
+* ============================================
+** 4. OLD / DEPRECATED !!
+* ============================================
+
+*** IMPORTANT !!!!
+*** Installing eis2Java is no longer needed because it is now packages as part of eis-0.3 ***
+
+Installing eis2java as a maven dependency to the local repo
+1. Download eis2java.jar
+2. run the following command
+
+mvn install:install-file -Dfile=eis2java.jar -DgroupId=apleis -DartifactId=eis2java -Dversion=0.1 -Dpackaging=jar
+
+

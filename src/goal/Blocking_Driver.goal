@@ -1,0 +1,23 @@
+init module {
+	actionspec{
+		accelerate(X) {
+			pre  { number(X) }
+			post { true }
+		}
+		decelerate(X) {
+			pre  { number(X) }
+			post { true }
+		}
+		skip {
+			pre  { true }
+			post { true }
+		}
+	}
+}
+main module{
+	program [order=linear] {
+		if bel(true) then accelerate(0).
+	}
+}
+
+
