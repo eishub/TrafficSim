@@ -2,7 +2,7 @@ init module {
 	knowledge {
 		%make this random? GOAL and SWI prolog seem to have a problem here for example goal does not seem to liek this: X is random(10), min_timegap(1.0 + X/10).
 		min_gap(3.0).
-		blocked(me) :- block(1).
+		blocked(X) :- block(X,1).
 	}
 
 	actionspec{
